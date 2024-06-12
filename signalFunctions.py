@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from scipy.interpolate import CubicSpline
 
 
@@ -60,3 +61,20 @@ def cubic_envelope(array: np.array, add_plateau: bool = False) -> tuple[np.array
         q_l[k] = l_func(k)
 
     return q_l, q_u
+
+
+def calculate_speed(array: np.array) -> np.array:
+    """
+    Вычисление скорости по ускорению сигнала интегрированием по методу трапеции
+    :param array: 1D np.array, значения ускорения сигнала
+    :return: 1D np.array, значения скорости сигнала
+    """
+    res = np.zeros(len(array))
+
+    for i in range(len(array) - 1):
+        res[i] = np.trapz(array[i:i + 2])
+
+    # Повторение последнего вычисленного значения скорости
+    res[-1] = res[-2]
+
+    return res
