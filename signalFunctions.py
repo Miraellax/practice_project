@@ -1,5 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
+import torchaudio
 from scipy.interpolate import CubicSpline
 
 
@@ -78,3 +80,74 @@ def calculate_speed(array: np.array) -> np.array:
     res[-1] = res[-2]
 
     return res
+
+
+def get_spectrogram(signal: torch.Tensor, n_fft: int) -> torch.Tensor:
+    """
+    Получение спектрограммы по сигналу с использованием окна Ханна
+    :param signal: 2D torch.Tensor, значения одноканального сигнала
+    :param n_fft: Ширина окна преобразования Фурье, количество анализируемых частот
+    :return: Спектрограмма сигнала
+    """
+    window = torch.hann_window(window_length=n_fft)
+
+    spectrum = torch.stft(signal, n_fft=n_fft, return_complex=True, window=window)
+    spectrogram = spectrum.abs().pow(2)
+
+    return spectrogram[0]
+
+
+def get_spectrum(signal: torch.Tensor, n_fft: int) -> torch.Tensor:
+    """
+    Получение спектра сигнала с использованием окна Ханна
+    :param signal: 2D torch.Tensor, значения одноканального сигнала
+    :param n_fft: Ширина окна преобразования Фурье, количество анализируемых частот
+    :return: Спектр сигнала
+    """
+    window = torch.hann_window(window_length=n_fft)
+
+    spectrum = torch.stft(signal, n_fft=n_fft, return_complex=True, window=window).squeeze()
+    spectrum = spectrum.abs().pow(2).sum(dim=1)
+
+    return spectrum
+
+def plot_spectrogram(spectrogram: torch.Tensor, isLog: bool = True):
+    """
+    Построение графика спектрограммы
+    :param spectrum: спектрограмма размерности [N, T],
+            где N - количество частот, T - количество окон
+    :param isLog: Логарифмирование значеий для улучшения визуализации
+    """
+    plt.figure(figsize=(20, 5))
+    plt.ylabel('Frequency (Hz)', size=20)
+    plt.xlabel('Time (sec)', size=20)
+    if isLog:
+        plt.pcolormesh(spectrogram.log())
+    else:
+        plt.pcolormesh(spectrogram)
+    plt.show()
+
+
+def plot_spectrum(spectrum: np.array):
+    """
+    Построение графика спектра сигнала
+    :param spectrum: Значения спектра сигнала
+    """
+    plt.figure(figsize=(20, 5))
+    plt.plot(spectrum)
+    plt.grid()
+    plt.xlabel('Frequency (Hz)', size=20)
+    plt.ylabel('Magnitude$^2$ / Power', size=20)
+    plt.show()
+
+
+# wav, sr = torchaudio.load("audio/IDS_Подшипник качения 3311A-2Z C3MT33 (SKF)  Измерение от 24.01.2024 9 11 42_1В.wav")
+
+# speed = calculate_speed(wav[0])
+# lower, upper = cubic_envelope(wav[0], True)
+
+# spec = get_spectrum(wav, n_fft=512)
+# spec = get_spectrum(torch.from_numpy(speed), n_fft=512)
+# spec = get_spectrum(torch.from_numpy(upper), n_fft=512)
+
+# plot_spectrum(spec)
